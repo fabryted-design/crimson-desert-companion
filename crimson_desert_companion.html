@@ -1,0 +1,2064 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Crimson Desert · Compagno di Gioco</title>
+
+<!-- PWA / "Aggiungi a Home Screen" su iPhone e Android -->
+<link rel="manifest" href="manifest.webmanifest" />
+<link rel="apple-touch-icon" href="apple-touch-icon.png" />
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png" />
+<link rel="icon" type="image/png" sizes="512x512" href="icon-512.png" />
+<meta name="theme-color" content="#11100c" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="Crimson Desert" />
+<meta name="mobile-web-app-capable" content="yes" />
+
+<style>
+  /* ─── Palette dark fantasy + cyberpunk ─── */
+  :root {
+    --bg:         #11100c;
+    --bg-deep:    #0a0907;
+    --surface:    #1c1a14;
+    --surface-2:  #221f17;
+    --border:     #3a3328;
+    --border-soft:#2a2620;
+    --crimson:    #b8362e;
+    --crimson-d:  #7a1f17;
+    --gold:       #c8a14a;
+    --gold-d:     #8e6e25;
+    --cyan:       #4ec9b0;
+    --cyan-d:     #2d7a6a;
+    --text:       #e8d9b8;
+    --text-soft:  #8a7960;
+    --text-mute:  #5a4f3d;
+    --abyss:      #2d8e6b;
+    --tap:        44px;
+  }
+
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg);
+    /* background-attachment:fixed non funziona su iOS Safari — rimosso */
+    background-image: radial-gradient(ellipse at 50% 0%, #1a1610 0%, var(--bg) 55%, var(--bg-deep) 100%);
+    color: var(--text);
+    line-height: 1.45;
+    min-height: 100vh;
+    min-height: 100dvh; /* iOS Safari: esclude la barra URL */
+    font-size: 16px;
+    overflow-x: hidden;
+  }
+  .mono { font-family: "SF Mono", Menlo, Consolas, monospace; font-feature-settings: "tnum"; }
+
+  /* ─── Header ─── */
+  .top {
+    padding: calc(14px + env(safe-area-inset-top, 0)) 16px 14px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg);
+    position: sticky;
+    top: 0;
+    z-index: 50;
+  }
+  .top::after {
+    content: "";
+    position: absolute;
+    left: 16px; right: 16px; bottom: -1px;
+    height: 1px;
+    background: linear-gradient(90deg, transparent 0%, var(--gold-d) 50%, transparent 100%);
+  }
+  .logo {
+    flex: 1;
+    margin: 0;
+    font-family: "Trajan Pro", "Cinzel", "Georgia", serif;
+    font-weight: 600;
+    font-size: 17px;
+    letter-spacing: 1.2px;
+    color: var(--text);
+  }
+  .logo .accent {
+    color: var(--crimson);
+    margin-right: 4px;
+    font-size: 13px;
+    vertical-align: 2px;
+  }
+  .icon-btn {
+    width: var(--tap); height: var(--tap);
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text-soft);
+    border-radius: 10px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 16px;
+    flex-shrink: 0;
+  }
+  .icon-btn:hover, .icon-btn:active { color: var(--gold); border-color: var(--gold-d); }
+  .icon-btn.active { color: var(--gold); border-color: var(--gold-d); background: var(--surface-2); }
+
+  /* ─── Search row ─── */
+  #search-row {
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--border-soft);
+    background: var(--surface);
+    display: none;
+  }
+  #search-row.open { display: flex; gap: 8px; align-items: center; }
+  .search-input {
+    flex: 1;
+    padding: 10px 14px;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    color: var(--text);
+    border-radius: 10px;
+    font-size: 15px;
+    outline: none;
+    min-height: var(--tap);
+  }
+  .search-input::placeholder { color: var(--text-mute); }
+  .search-input:focus { border-color: var(--gold-d); }
+
+  /* ─── Run state strip ─── */
+  .runstate {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border-soft);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 13px;
+    background: var(--surface);
+    flex-wrap: wrap;
+  }
+  .pill {
+    padding: 0 14px;
+    height: 36px;
+    min-height: 36px;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    color: var(--text);
+    font-size: 13px;
+    cursor: pointer;
+    background: var(--surface-2);
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+  }
+  .pill .lbl { color: var(--text-soft); font-size: 11px; text-transform: uppercase; letter-spacing: 0.6px; }
+  .pill:hover { border-color: var(--gold-d); }
+  .pill .caret { color: var(--text-mute); font-size: 9px; margin-left: 2px; }
+  .progress {
+    margin-left: auto;
+    color: var(--gold);
+    font-size: 12px;
+    text-align: right;
+    line-height: 1.2;
+  }
+  .progress .num { font-size: 13px; font-weight: 600; }
+  .progress .bar {
+    margin-top: 4px;
+    width: 64px;
+    height: 3px;
+    background: var(--border);
+    border-radius: 2px;
+    overflow: hidden;
+    margin-left: auto;
+  }
+  .progress .bar > i {
+    display: block; height: 100%;
+    background: linear-gradient(90deg, var(--crimson) 0%, var(--gold) 100%);
+    width: 0%;
+    transition: width 0.3s;
+  }
+
+  /* ─── Segmented control ─── */
+  .seg {
+    margin: 14px 16px 8px;
+    display: flex;
+    gap: 0;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: var(--surface);
+    padding: 3px;
+  }
+  .seg .opt {
+    flex: 1;
+    text-align: center;
+    padding: 10px 0;
+    font-size: 14px;
+    color: var(--text-soft);
+    cursor: pointer;
+    border-radius: 9px;
+    min-height: var(--tap);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    user-select: none;
+  }
+  .seg .opt.active {
+    background: var(--surface-2);
+    color: var(--text);
+    box-shadow: inset 0 0 0 1px var(--gold-d);
+  }
+  .seg .opt.active::before {
+    content: "";
+    width: 4px; height: 4px;
+    border-radius: 50%;
+    background: var(--cyan);
+  }
+
+  /* ─── Chip strip wrap ─── */
+  .chip-strip {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 8px 16px 12px;
+  }
+  .chip {
+    padding: 9px 13px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text-soft);
+    border-radius: 999px;
+    font-size: 13px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 36px;
+    white-space: nowrap;
+    font-family: inherit;
+  }
+  .chip .ico { font-size: 14px; line-height: 1; }
+  .chip .count { color: var(--text-mute); font-size: 11px; margin-left: 2px; }
+  .chip.active {
+    background: rgba(184,54,46,0.12);
+    border-color: var(--crimson);
+    color: var(--text);
+  }
+  .chip.active .count { color: var(--gold); }
+  .chip:not(.active):hover { border-color: var(--text-soft); color: var(--text); }
+
+  /* ─── Toggle row ─── */
+  .filter-row {
+    display: flex;
+    gap: 16px;
+    padding: 0 16px 14px;
+    flex-wrap: wrap;
+    align-items: center;
+    border-bottom: 1px solid var(--border-soft);
+  }
+  .toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    font-size: 12px;
+    color: var(--text-soft);
+    user-select: none;
+    min-height: 32px;
+  }
+  .toggle .switch {
+    width: 32px;
+    height: 18px;
+    border-radius: 999px;
+    background: var(--border);
+    position: relative;
+    transition: background 0.18s;
+    flex-shrink: 0;
+  }
+  .toggle .switch::after {
+    content: "";
+    position: absolute;
+    top: 2px; left: 2px;
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    background: var(--text-mute);
+    transition: transform 0.18s, background 0.18s;
+  }
+  .toggle.on .switch { background: var(--crimson-d); }
+  .toggle.on .switch::after { transform: translateX(14px); background: var(--gold); }
+  .toggle.on { color: var(--text); }
+
+  /* ─── Section header con rune divider ─── */
+  .section-h {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 22px 16px 10px;
+    color: var(--gold);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1.6px;
+    font-weight: 600;
+  }
+  .section-h::before, .section-h::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: var(--border-soft);
+  }
+  .section-h .rune {
+    color: var(--crimson);
+    font-size: 9px;
+    transform: rotate(45deg);
+  }
+  .section-h .count {
+    color: var(--text-mute);
+    font-weight: 400;
+    text-transform: none;
+    letter-spacing: 0.4px;
+    font-size: 11px;
+    margin-left: -2px;
+  }
+
+  /* ─── Cards ─── */
+  .cards { padding: 0 16px; }
+  .swipe-wrap {
+    position: relative;
+    overflow: hidden;
+    border-radius: 8px;
+    margin-bottom: 10px;
+  }
+  .swipe-wrap .swipe-action {
+    position: absolute;
+    inset: 0 0 0 auto;
+    width: 110px;
+    background: var(--abyss);
+    color: var(--text);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    pointer-events: none;
+  }
+  .swipe-wrap .swipe-action .ico { font-size: 22px; }
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border-soft);
+    border-left: 3px solid var(--crimson);
+    border-radius: 8px;
+    padding: 14px;
+    cursor: pointer;
+    position: relative;
+    transition: border-color 0.12s, transform 0.25s;
+    margin-bottom: 0;
+    will-change: transform;
+  }
+  .swipe-wrap .card { margin-bottom: 0; }
+  .card:hover { border-top-color: var(--cyan-d); border-right-color: var(--cyan-d); border-bottom-color: var(--cyan-d); }
+  .card .head {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+  }
+  .card .ico {
+    width: 36px; height: 36px;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    flex-shrink: 0;
+  }
+  .card .body { flex: 1; min-width: 0; }
+  .card .title {
+    font-size: 15.5px;
+    color: var(--text);
+    margin: 0 0 4px;
+    font-weight: 500;
+    letter-spacing: 0.2px;
+    overflow-wrap: break-word;
+  }
+  .card .desc {
+    font-size: 13px;
+    color: var(--text-soft);
+    margin: 6px 0 0;
+    line-height: 1.45;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .card .badges {
+    display: flex; flex-wrap: wrap; gap: 5px;
+    margin-top: 4px;
+  }
+  .badge {
+    font-size: 10.5px;
+    padding: 3px 8px;
+    border-radius: 4px;
+    background: rgba(232,217,184,0.04);
+    color: var(--text-soft);
+    border: 1px solid var(--border);
+    letter-spacing: 0.3px;
+    font-weight: 500;
+    line-height: 1.4;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .badge.region { color: var(--gold); border-color: var(--gold-d); background: rgba(200,161,74,0.05); }
+  .badge.lvl { color: var(--crimson); border-color: var(--crimson-d); background: rgba(184,54,46,0.05); }
+  .badge.lvl .mono { font-weight: 600; }
+  .badge.chap { color: var(--cyan); border-color: var(--cyan-d); background: rgba(78,201,176,0.05); }
+  .badge.mandatory { color: var(--text-soft); border-color: var(--border); background: transparent; font-style: italic; }
+  .badge.rarity {
+    text-transform: uppercase;
+    font-weight: 600;
+    color: var(--gold);
+    border-color: var(--gold);
+    background: rgba(200,161,74,0.10);
+  }
+  .badge.rarity.unique { color: #e8d9b8; border-color: #c8a14a; background: rgba(200,161,74,0.18); }
+  .badge.rarity.epic { color: #c896f5; border-color: #6e51a8; background: rgba(110,81,168,0.10); }
+  .badge.rarity.legendary { color: var(--gold); border-color: var(--gold); background: rgba(200,161,74,0.12); }
+  .badge.pg {
+    background: var(--crimson);
+    color: var(--text);
+    border-color: var(--crimson);
+    font-weight: 600;
+    width: 18px;
+    height: 18px;
+    padding: 0;
+    justify-content: center;
+    border-radius: 50%;
+    font-size: 10px;
+  }
+
+  /* Bordi sinistri colorati per categoria */
+  .card.cat-city        { border-left-color: var(--crimson-d); }
+  .card.cat-village     { border-left-color: var(--gold); }
+  .card.cat-quest       { border-left-color: var(--abyss); }
+  .card.cat-collectible { border-left-color: #d4a017; }
+  .card.cat-boss        { border-left-color: var(--crimson); }
+  .card.cat-puzzle      { border-left-color: #4a86c5; }
+  .card.cat-vendor      { border-left-color: #7a4a2c; }
+  .card.cat-bell        { border-left-color: var(--gold); }
+  .card.cat-abyss       { border-left-color: #6a4ba8; }
+  .card.cat-weapon      { border-left-color: var(--crimson); }
+  .card.cat-armor       { border-left-color: #6c7a89; }
+  .card.cat-accessory   { border-left-color: #d81b60; }
+  .card.cat-abysscore   { border-left-color: #6a1b9a; }
+  .card.cat-material    { border-left-color: #2e7d32; }
+  .card.cat-mount       { border-left-color: #5d4037; }
+  .card.cat-keyitem     { border-left-color: #ef6c00; }
+  .card.cat-manual      { border-left-color: #1565c0; }
+
+  /* Stato completato — card "spenta" */
+  .card.completed {
+    opacity: 0.42;
+    border-left-color: var(--text-mute) !important;
+  }
+  .card.completed .title { color: var(--text-soft); font-weight: 400; }
+  .card.completed .desc { color: var(--text-mute); }
+  .card.completed .ico { background: transparent; border-color: var(--border-soft); color: var(--text-mute); }
+  .card.completed .badges { display: none; }
+  .card.completed::after {
+    content: "fatto";
+    position: absolute;
+    top: 14px; right: 14px;
+    color: var(--text-mute);
+    font-size: 10px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+  .card.completed:hover { opacity: 0.72; border-color: var(--border-soft); }
+
+  /* ─── Empty state ─── */
+  .empty {
+    text-align: center;
+    padding: 50px 20px;
+    color: var(--text-mute);
+  }
+  .empty .ico { font-size: 32px; margin-bottom: 10px; opacity: 0.6; }
+  .empty .ttl { color: var(--text-soft); font-size: 14px; margin-bottom: 4px; }
+  .empty .sub { font-size: 12px; }
+
+  /* ─── Bottom sheet ─── */
+  .sheet-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(10,9,7,0.6);
+    z-index: 90;
+    display: none;
+    backdrop-filter: blur(2px);
+    -webkit-backdrop-filter: blur(2px);
+  }
+  .sheet-backdrop.open { display: block; }
+  .sheet {
+    position: fixed;
+    bottom: 0;
+    left: 0; right: 0;
+    z-index: 100;
+    background: var(--surface);
+    border-top: 1px solid var(--gold-d);
+    border-radius: 18px 18px 0 0;
+    max-height: 85vh;
+    transform: translateY(100%);
+    transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 -8px 32px rgba(0,0,0,0.5);
+    overflow: hidden;
+  }
+  .sheet.open { transform: translateY(0); }
+  .sheet .handle {
+    align-self: center;
+    width: 40px; height: 4px;
+    background: var(--text-mute);
+    border-radius: 2px;
+    margin: 10px 0 4px;
+    flex-shrink: 0;
+    cursor: grab;
+    opacity: 0.5;
+  }
+  .sheet-content {
+    overflow-y: auto;
+    padding: 8px 18px 24px;
+    -webkit-overflow-scrolling: touch;
+    flex: 1;
+  }
+  .sheet-content::after { content: ""; display: block; height: env(safe-area-inset-bottom, 0); }
+  .sheet h2 {
+    margin: 8px 0 4px;
+    font-size: 19px;
+    color: var(--text);
+    font-weight: 600;
+    letter-spacing: 0.3px;
+    line-height: 1.3;
+  }
+  .sheet h2 .ico { font-size: 22px; margin-right: 6px; }
+  .sheet .alt {
+    color: var(--text-mute);
+    font-size: 12px;
+    margin: 4px 0 12px;
+    font-style: italic;
+  }
+  .sheet .badges { margin-bottom: 14px; }
+  .sheet .desc {
+    font-size: 14.5px;
+    color: var(--text);
+    line-height: 1.5;
+    margin: 12px 0;
+  }
+  .sheet .meta-block { margin: 18px 0 0; }
+  .sheet .meta-block h3 {
+    font-size: 11px;
+    color: var(--gold);
+    text-transform: uppercase;
+    letter-spacing: 1.4px;
+    font-weight: 600;
+    margin: 0 0 6px;
+  }
+  .sheet .meta-block p {
+    margin: 0;
+    color: var(--text-soft);
+    font-size: 13.5px;
+    line-height: 1.5;
+  }
+  .sheet .actions {
+    display: flex;
+    gap: 8px;
+    margin: 22px 0 6px;
+    flex-wrap: wrap;
+  }
+  .sheet .btn {
+    flex: 1;
+    min-width: 130px;
+    min-height: var(--tap);
+    border: 1px solid var(--border);
+    background: var(--surface-2);
+    color: var(--text);
+    border-radius: 10px;
+    padding: 0 14px;
+    font-size: 14px;
+    font-family: inherit;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+  .sheet .btn.primary { background: var(--crimson-d); border-color: var(--crimson); color: var(--text); }
+  .sheet .btn.primary:hover { background: var(--crimson); }
+  .sheet .btn.success { background: rgba(45,142,107,0.14); border-color: var(--abyss); color: var(--abyss); }
+  .sheet .btn.success:hover { background: var(--abyss); color: var(--text); }
+  .sheet .btn:hover { border-color: var(--gold-d); }
+
+  /* ─── Picker (modal piccolo per regione/capitolo) ─── */
+  .picker-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(10,9,7,0.6);
+    z-index: 110;
+    display: none;
+  }
+  .picker-backdrop.open { display: flex; align-items: flex-end; justify-content: center; padding: 20px; }
+  .picker {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    width: 100%;
+    max-width: 460px;
+    overflow: hidden;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+  }
+  .picker .header {
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--border-soft);
+    color: var(--gold);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1.4px;
+    font-weight: 600;
+  }
+  .picker .opts { max-height: 60vh; overflow-y: auto; }
+  .picker .row {
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--border-soft);
+    color: var(--text);
+    cursor: pointer;
+    font-size: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: var(--tap);
+  }
+  .picker .row:last-child { border-bottom: 0; }
+  .picker .row.selected { color: var(--gold); }
+  .picker .row.selected::after { content: "✓"; color: var(--gold); }
+  .picker .row:hover { background: var(--surface-2); }
+
+  /* ─── Map modal ─── */
+  .map-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(10,9,7,0.92);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 200;
+    padding: 12px;
+  }
+  .map-overlay.open { display: flex; }
+  .map-overlay-inner {
+    background: var(--surface);
+    border: 1px solid var(--gold-d);
+    border-radius: 14px;
+    max-width: 96vw;
+    max-height: 96vh;
+    width: 1100px;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 16px 48px rgba(0,0,0,0.6);
+    overflow: hidden;
+  }
+  .map-overlay-header {
+    padding: 12px 16px;
+    background: var(--surface-2);
+    color: var(--text);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    border-bottom: 1px solid var(--border);
+  }
+  .map-overlay-header h3 { margin: 0; font-size: 15px; flex: 1; font-weight: 500; letter-spacing: 0.3px; }
+  .map-overlay-header .map-meta { font-size: 11px; color: var(--text-soft); }
+  .map-overlay-header .map-close {
+    background: var(--surface);
+    color: var(--text-soft);
+    border: 1px solid var(--border);
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 18px;
+    line-height: 1;
+  }
+  .map-overlay-header .map-close:hover { color: var(--gold); border-color: var(--gold-d); }
+  .map-stage {
+    position: relative;
+    flex: 1;
+    overflow: auto;
+    background: #000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 0;
+  }
+  .map-stage-inner { position: relative; display: inline-block; line-height: 0; }
+  .map-stage img {
+    display: block;
+    max-width: 100%;
+    max-height: calc(96vh - 130px);
+    height: auto;
+    user-select: none;
+    -webkit-user-drag: none;
+  }
+  .map-pin {
+    position: absolute;
+    width: 0; height: 0;
+    pointer-events: none;
+    z-index: 2;
+  }
+  .map-pin .pin-icon {
+    position: absolute;
+    transform: translate(-50%, -100%);
+    width: 24px; height: 30px;
+    background: var(--crimson);
+    clip-path: polygon(50% 100%, 0 50%, 0 0, 100% 0, 100% 50%);
+    border-radius: 4px 4px 0 0;
+    border: 2px solid var(--gold);
+    box-shadow: 0 0 0 1px rgba(78,201,176,0.4), 0 0 12px rgba(78,201,176,0.3);
+  }
+  .map-pin .pin-pulse {
+    position: absolute;
+    width: 60px; height: 60px;
+    border: 2px solid var(--cyan);
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    animation: pulse 1.8s ease-out infinite;
+    opacity: 0;
+  }
+  @keyframes pulse {
+    0% { transform: translate(-50%, -50%) scale(.3); opacity: .8; }
+    100% { transform: translate(-50%, -50%) scale(1.4); opacity: 0; }
+  }
+  .map-caption {
+    padding: 12px 16px;
+    background: var(--surface-2);
+    border-top: 1px solid var(--border);
+    font-size: 12.5px;
+    color: var(--text-soft);
+    line-height: 1.5;
+  }
+  .map-caption .ttl { font-weight: 600; color: var(--text); margin-right: 8px; }
+
+  /* ─── Loading screen ─── */
+  #loading-screen {
+    position: fixed; inset: 0;
+    background: var(--bg);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+    z-index: 9999;
+  }
+  #loading-screen.hidden { display: none; }
+  .load-logo {
+    font-family: "Trajan Pro","Cinzel","Georgia",serif;
+    font-size: 22px;
+    letter-spacing: 2px;
+    color: var(--text);
+  }
+  .load-logo span { color: var(--crimson); margin-right: 6px; }
+  .load-spinner {
+    width: 32px; height: 32px;
+    border: 2px solid var(--border);
+    border-top-color: var(--gold);
+    border-radius: 50%;
+    animation: spin 0.9s linear infinite;
+  }
+  .load-msg { font-size: 13px; color: var(--text-mute); }
+  .load-error { display: none; flex-direction: column; align-items: center; gap: 12px; }
+  .load-error p { color: var(--crimson); font-size: 14px; text-align: center; max-width: 280px; }
+  .load-error button {
+    padding: 10px 20px; border-radius: 10px;
+    background: var(--surface); border: 1px solid var(--border);
+    color: var(--text); font-size: 14px; cursor: pointer;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ─── Menu dropdown ─── */
+  .menu-wrap {
+    position: relative;
+  }
+  .menu-dropdown {
+    display: none;
+    position: absolute;
+    top: calc(100% + 6px);
+    right: 0;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    min-width: 190px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+    overflow: hidden;
+    z-index: 200;
+  }
+  .menu-dropdown.open { display: block; }
+  .menu-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 13px 16px;
+    font-size: 15px;
+    color: var(--text);
+    cursor: pointer;
+    border: none;
+    background: none;
+    width: 100%;
+    text-align: left;
+  }
+  .menu-item:hover, .menu-item:active { background: var(--border-soft); }
+  .menu-item + .menu-item { border-top: 1px solid var(--border-soft); }
+  .menu-item.danger { color: var(--crimson); }
+
+  /* ─── Sezione Ora ─── */
+  #ora-section { display: none; padding-bottom: 24px; }
+
+  .ora-group-label {
+    font-size: 11px;
+    color: var(--gold);
+    text-transform: uppercase;
+    letter-spacing: 1.4px;
+    font-weight: 600;
+    padding: 14px 16px 6px;
+  }
+
+  .chap-strip {
+    display: flex;
+    gap: 6px;
+    padding: 2px 16px 14px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .chap-strip::-webkit-scrollbar { display: none; }
+
+  .chap-btn {
+    min-width: 44px;
+    height: 44px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text-soft);
+    border-radius: 10px;
+    font-size: 14px;
+    font-family: "SF Mono", Menlo, Consolas, monospace;
+    font-feature-settings: "tnum";
+    font-weight: 500;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .chap-btn.active {
+    background: var(--surface-2);
+    border-color: var(--gold-d);
+    color: var(--gold);
+    font-weight: 700;
+  }
+  .chap-btn:hover { border-color: var(--text-soft); color: var(--text); }
+
+  .zone-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    padding: 2px 16px 16px;
+  }
+  .zone-tile {
+    border: 1px solid var(--border);
+    background: var(--surface);
+    border-radius: 12px;
+    padding: 13px 12px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-height: 64px;
+    user-select: none;
+  }
+  .zone-tile .z-ico { font-size: 22px; line-height: 1; flex-shrink: 0; }
+  .zone-tile .z-body { flex: 1; min-width: 0; }
+  .zone-tile .z-name {
+    font-size: 14px;
+    color: var(--text);
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .zone-tile .z-count {
+    font-size: 11px;
+    color: var(--text-mute);
+    margin-top: 2px;
+  }
+  .zone-tile.active {
+    background: rgba(184,54,46,0.12);
+    border-color: var(--crimson);
+  }
+  .zone-tile.active .z-name { color: var(--gold); }
+  .zone-tile.active .z-count { color: var(--text-soft); }
+  .zone-tile:not(.active):hover { border-color: var(--text-soft); }
+
+  .ora-sub-h {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 16px 16px 8px;
+    color: var(--text-soft);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1.4px;
+    font-weight: 600;
+  }
+  .ora-sub-h::before, .ora-sub-h::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: var(--border-soft);
+  }
+  .ora-sub-h .rune { color: var(--crimson); font-size: 9px; transform: rotate(45deg); display: inline-block; }
+  .ora-sub-h .cnt { color: var(--text-mute); font-weight: 400; letter-spacing: 0.4px; text-transform: none; font-size: 11px; margin-left: -2px; }
+  .ora-empty {
+    text-align: center;
+    padding: 20px;
+    color: var(--text-mute);
+    font-size: 13px;
+  }
+  #ora-results .cards { padding: 0 16px; }
+
+  /* ─── Sezione Quest (accordion) ─── */
+  #quest-section { display: none; padding-bottom: 24px; }
+
+  .qa-group {
+    margin: 0 16px 10px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    background: var(--surface);
+  }
+  .qa-group-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 13px 16px;
+    cursor: pointer;
+    user-select: none;
+    min-height: var(--tap);
+  }
+  .qa-group-header.open { border-bottom: 1px solid var(--border-soft); }
+  .qa-group-icon { font-size: 18px; flex-shrink: 0; line-height: 1; }
+  .qa-group-name { flex: 1; font-size: 15px; font-weight: 600; color: var(--text); }
+  .qa-group-progress { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+  .qa-counter {
+    font-family: "SF Mono", Menlo, Consolas, monospace;
+    font-feature-settings: "tnum";
+    font-size: 12px;
+    color: var(--gold);
+  }
+  .qa-counter.alldone { color: var(--abyss); }
+  .qa-chevron {
+    color: var(--text-mute);
+    font-size: 11px;
+    transition: transform 0.2s;
+    line-height: 1;
+  }
+  .qa-group-header.open .qa-chevron { transform: rotate(180deg); }
+  .qa-group-body { display: none; }
+  .qa-group-body.open { display: block; }
+  .qa-sub-header {
+    padding: 10px 16px 6px;
+    font-size: 10.5px;
+    color: var(--text-mute);
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .qa-sub-counter {
+    font-family: "SF Mono", Menlo, Consolas, monospace;
+    font-size: 11px;
+    color: var(--text-mute);
+    font-weight: 400;
+    text-transform: none;
+    letter-spacing: 0;
+  }
+  .qa-group-body .cards { padding: 0 12px 12px; }
+
+  /* Seg a 5 tab: font più piccolo su mobile */
+  .seg.five-tabs .opt { font-size: 12.5px; }
+  @media (max-width: 390px) {
+    .seg.five-tabs .opt { font-size: 11.5px; padding: 10px 2px; }
+  }
+
+  /* ─── Footer ─── */
+  footer {
+    padding: 24px 16px calc(28px + env(safe-area-inset-bottom, 0));
+    text-align: center;
+    color: var(--text-mute);
+    font-size: 11px;
+    letter-spacing: 0.6px;
+    border-top: 1px solid var(--border-soft);
+    margin-top: 14px;
+  }
+
+  /* ─── Mobile tweaks ─── */
+  @media (max-width: 460px) {
+    .runstate { padding: 10px 14px; }
+    .pill { padding: 0 11px; font-size: 12px; }
+    .progress { width: 100%; margin-left: 0; text-align: left; margin-top: 4px; }
+    .progress .bar { margin-left: 0; }
+    .seg { margin: 12px 14px 6px; }
+    .seg .opt { font-size: 13px; }
+    .filter-row { gap: 12px; }
+    .toggle { font-size: 11.5px; }
+    .cards, .chip-strip { padding-left: 14px; padding-right: 14px; }
+    .section-h { margin-left: 14px; margin-right: 14px; }
+    .map-overlay { padding: 0; }
+    .map-overlay-inner { border-radius: 0; max-width: 100vw; max-height: 100vh; width: 100vw; }
+    .sheet { max-height: 92vh; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Loading screen -->
+<div id="loading-screen">
+  <div class="load-logo"><span>◆</span>Crimson Desert</div>
+  <div id="load-spinner" class="load-spinner"></div>
+  <div class="load-msg" id="load-msg">Caricamento dati…</div>
+  <div class="load-error" id="load-error">
+    <p>Impossibile caricare i dati.<br>Controlla la connessione e riprova.</p>
+    <button onclick="loadData()">Riprova</button>
+  </div>
+</div>
+
+<header class="top">
+  <h1 class="logo"><span class="accent">◆</span>Crimson Desert</h1>
+  <button class="icon-btn" id="btn-search" title="Cerca" aria-label="Cerca">🔍</button>
+  <div class="menu-wrap">
+    <button class="icon-btn" id="btn-menu" title="Menu" aria-label="Menu">⋯</button>
+    <div class="menu-dropdown" id="menu-dropdown">
+      <button class="menu-item" id="menu-refresh">🔄 Aggiorna dati</button>
+      <button class="menu-item" id="menu-import">📥 Importa progressi</button>
+      <button class="menu-item danger" id="menu-reset">🗑 Reset progressi</button>
+    </div>
+  </div>
+</header>
+
+<div id="search-row">
+  <input class="search-input" id="search" placeholder="Cerca POI o item…" />
+  <button class="icon-btn" id="btn-search-close" aria-label="Chiudi ricerca">×</button>
+</div>
+
+<div class="runstate">
+  <button class="pill" id="pill-chap" type="button">
+    <span class="lbl">Cap.</span><span class="mono" id="pill-chap-val">1</span><span class="caret">▼</span>
+  </button>
+  <button class="pill" id="pill-region" type="button">
+    <span class="lbl">Regione</span><span id="pill-region-val">Hernand</span><span class="caret">▼</span>
+  </button>
+  <span class="progress">
+    <div><span class="num mono" id="prog-num">0/0</span> in zona</div>
+    <span class="bar"><i id="prog-bar"></i></span>
+  </span>
+</div>
+
+<div class="seg five-tabs" id="seg">
+  <div class="opt active" data-mode="all">Tutto</div>
+  <div class="opt" data-mode="world">Mondo</div>
+  <div class="opt" data-mode="quest">Quest</div>
+  <div class="opt" data-mode="items">Compendio</div>
+  <div class="opt" data-mode="ora">Ora</div>
+</div>
+
+<div class="chip-strip" id="chip-strip"></div>
+
+<div class="filter-row">
+  <label class="toggle on" data-toggle="hideMandatory">
+    <span class="switch"></span>
+    <span>Nascondi storia obbligatoria</span>
+  </label>
+  <label class="toggle" data-toggle="hideCompleted">
+    <span class="switch"></span>
+    <span>Nascondi completati</span>
+  </label>
+</div>
+
+<div id="results-section">
+  <div class="section-h" id="main-h"><span class="rune">◆</span><span id="main-h-label">Tutto</span><span class="count" id="main-h-count"></span></div>
+  <div id="results" class="cards"></div>
+</div>
+
+<div id="quest-section"></div>
+
+<div id="ora-section">
+  <div class="ora-group-label">Capitolo in corso</div>
+  <div class="chap-strip" id="ora-chap-strip"></div>
+  <div class="ora-group-label" style="padding-top:4px">Zona attuale</div>
+  <div class="zone-grid" id="ora-zone-grid"></div>
+  <div id="ora-results"></div>
+</div>
+
+<footer>
+  <span class="mono" id="footer-stats">Pywel · 173 POI</span>
+</footer>
+
+<!-- Sheet -->
+<div class="sheet-backdrop" id="sheet-backdrop"></div>
+<div class="sheet" id="sheet" role="dialog" aria-modal="true">
+  <div class="handle" id="sheet-handle"></div>
+  <div class="sheet-content" id="sheet-content"></div>
+</div>
+
+<!-- Picker -->
+<div class="picker-backdrop" id="picker-backdrop">
+  <div class="picker" id="picker">
+    <div class="header" id="picker-header">—</div>
+    <div class="opts" id="picker-opts"></div>
+  </div>
+</div>
+
+<!-- Map overlay -->
+<div class="map-overlay" id="map-overlay" role="dialog" aria-modal="true">
+  <div class="map-overlay-inner">
+    <div class="map-overlay-header">
+      <h3 id="map-overlay-title">—</h3>
+      <span class="map-meta" id="map-overlay-meta"></span>
+      <button class="map-close" id="map-close" aria-label="Chiudi">×</button>
+    </div>
+    <div class="map-stage">
+      <div class="map-stage-inner">
+        <img id="map-image" alt="Mappa" />
+        <div class="map-pin" id="map-pin">
+          <span class="pin-pulse"></span>
+          <span class="pin-icon"></span>
+        </div>
+      </div>
+    </div>
+    <div class="map-caption" id="map-caption"></div>
+  </div>
+</div>
+
+<script>
+// Variabili dati — popolate dal fetch live su GitHub
+let POIS = [];
+let CATEGORIES = {};
+</script>
+<script>
+// ============================================================
+// COMPANION · Crimson Desert · v2 (Sprint A)
+// Dati: CATEGORIES, POIS, REGION_REMAP, mapCoord, composeItemSummary
+// ============================================================
+
+const ITEM_CATS = new Set(['weapon','armor','accessory','abysscore','material','mount','keyitem','manual']);
+const WORLD_CATS = ['city','village','quest','collectible','boss','puzzle','vendor','bell','abyss'];
+const REGIONS = ["Hernand","Pailune","Demeniss","Delesyia","Crimson Desert","Abyss"];
+const CHAPTERS = [1,2,3,4,5,6,7,8,9,10,11,12];
+const QUEST_GROUPS = [
+  {
+    id: "hernand", label: "Hernand", icon: "🏰",
+    subs: [
+      { label: "Missioni cittadine", ids: ["hernand-requests","hernand-commissions","hernand-fishing","hernand-mini-arena","oakbridge","old-mill","annabella-request"] },
+      { label: "Trials of Kindness", ids: ["trials-of-kindness"] },
+      { label: "Hernand in Chaos",   ids: ["hernand-in-chaos","kilnden-workshop"] },
+      { label: "Casa Alfonso",       ids: ["alfonso-transcendent","alfonso-house-spears"] },
+      { label: "Liberazioni",        ids: ["roothold","karin-quarry","southern-quarry","fort-warspike","fort-hellwood","fish-market-hernand","vilkom-outpost"] }
+    ]
+  },
+  {
+    id: "pailune", label: "Pailune", icon: "⚔️",
+    subs: [
+      { label: "Storia principale", ids: ["shadows-over-pailune","dawn-quest","decisive-battle","reconstructing-pailune","healing-pailune"] },
+      { label: "Militia di Pailune (27)", ids: ["pailune-militia","pailune-quest-board"] },
+      { label: "Antumbra Order (17)", ids: ["antumbra"] },
+      { label: "Pailune's Politics (8)", ids: ["pailune-politics"] },
+      { label: "Beighen Tribe + Esplorazione", ids: ["beighen-tribe","avalanche-pass","lord-amidst-ruins"] }
+    ]
+  },
+  {
+    id: "demeniss", label: "Demeniss", icon: "🌆",
+    subs: [
+      { label: "Storia principale (Cap. 8-9)", ids: ["demeniss-bound-quest","demeniss-senate","demeniss-politics","underground-arena"] },
+      { label: "Case nobili — boss faction",   ids: ["demeniss-quest-azerian","demeniss-quest-wells","demeniss-quest-thorel","demeniss-quest-marshell","demeniss-quest-elemore","demeniss-quest-byron","demeniss-quest-silvermoon","demeniss-quest-tariv"] }
+    ]
+  },
+  {
+    id: "delesyia", label: "Delesyia", icon: "🌿",
+    subs: [
+      { label: "Storia principale (Cap. 10-11)", ids: ["delesyia-main-story"] },
+      { label: "Marni Faction",                  ids: ["delesyia-quest-marni"] },
+      { label: "Ironwheel of Dewhaven",          ids: ["delesyia-quest-ironwheel"] },
+      { label: "Society of Progress",            ids: ["delesyia-quest-society"] },
+      { label: "Delesyian Aerial Force",         ids: ["delesyia-quest-aerial"] },
+      { label: "Redfox Merchants + Commissioni", ids: ["delesyia-quest-redfox","delesyia-quest-2"] }
+    ]
+  },
+  {
+    id: "crimson-desert", label: "Crimson Desert", icon: "🏜️",
+    subs: [
+      { label: "Storia principale (Cap. 9-10)",    ids: ["crimson-desert-main-story"] },
+      { label: "Lords of Unclaimed Lands",         ids: ["crimson-quest-lords-unclaimed"] },
+      { label: "Sage of the Desert",               ids: ["crimson-quest-sage-desert"] },
+      { label: "Tommaso Faction",                  ids: ["crimson-quest-tommaso-faction"] },
+      { label: "Redwing Merchant Guild",           ids: ["crimson-quest-redwing"] },
+      { label: "Pellegrinaggio + Commissioni",     ids: ["pilgrimage-stop-1","pilgrimage-stop-2","patch104-hostile-remnants"] }
+    ]
+  },
+  {
+    id: "abyss", label: "Abyss", icon: "🌑",
+    subs: [
+      { label: "Storia principale (Cap. 12)",  ids: ["abyss-main-story"] },
+      { label: "Abyss Restoration (catena)",   ids: ["abyss-riddle-square","abyss-origin-of-thoughts","abyss-forgotten-altar","abyss-disconnected-truth","abyss-ether-fragment"] },
+      { label: "Boss finali Cap. 12",          ids: ["corrupted-caliburn","myurdin-avatar-umbra","umbra"] },
+      { label: "Overwhelming Beings",          ids: ["kutum","praevus-the-ancient","forgotten-general","ator-archon-antumbra"] },
+      { label: "Armi di Antumbra",             ids: ["antumbra-sword","antumbra-staff","antumbra-spear"] }
+    ]
+  }
+];
+
+const ZONE_META = {
+  "Hernand":        { icon: "🏰" },
+  "Pailune":        { icon: "⚔️" },
+  "Demeniss":       { icon: "🌆" },
+  "Delesyia":       { icon: "🌿" },
+  "Crimson Desert": { icon: "🏜️" },
+  "Abyss":          { icon: "🌑" }
+};
+
+function isItem(p) { return ITEM_CATS.has(p.c); }
+
+function chapNum(chapStr) {
+  if (!chapStr) return null;
+  const m = String(chapStr).match(/cap\.?\s*(\d+)/i);
+  return m ? parseInt(m[1], 10) : null;
+}
+
+function escapeHtml(s) {
+  return String(s||"").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+}
+
+// ─── Stato + persistenza ───
+const LS_KEY = "cd-companion-v2";
+const LS_OLD = "cd-companion-v1";
+function loadState() {
+  // Carica v2; se non c'è, prova migrazione da v1 conservando completed
+  try {
+    const v2 = JSON.parse(localStorage.getItem(LS_KEY));
+    if (v2) return v2;
+  } catch (e) {}
+  let migrated = {};
+  try {
+    const v1 = JSON.parse(localStorage.getItem(LS_OLD));
+    if (v1 && v1.completed) migrated.completed = v1.completed;
+  } catch (e) {}
+  return migrated;
+}
+function saveState() {
+  localStorage.setItem(LS_KEY, JSON.stringify(state));
+}
+
+const state = Object.assign({
+  runRegion: "Hernand",
+  runChap: 1,
+  regionFilter: "Hernand",  // sincronizzato con runRegion (cambia entrambi insieme)
+  mode: "all",
+  categories: Object.keys(CATEGORIES),
+  search: "",
+  searchOpen: false,
+  hideMandatory: true,
+  hideCompleted: false,
+  completed: {}
+}, loadState());
+
+// Validazioni state (in caso di vecchi dati malformati)
+if (!REGIONS.includes(state.runRegion)) state.runRegion = "Hernand";
+if (typeof state.runChap !== "number" || state.runChap < 1 || state.runChap > 12) state.runChap = 1;
+if (state.regionFilter !== "all" && !REGIONS.includes(state.regionFilter)) state.regionFilter = state.runRegion;
+if (!["all","world","items","ora","quest"].includes(state.mode)) state.mode = "all";
+if (!Array.isArray(state.categories) || state.categories.length === 0) state.categories = Object.keys(CATEGORIES);
+
+// ─── Filtri ───
+function poiMatches(p) {
+  if (state.mode === 'world' && isItem(p)) return false;
+  if (state.mode === 'items' && !isItem(p)) return false;
+  if (state.hideMandatory && p.mandatory) return false;
+  if (state.hideCompleted && state.completed[p.id]) return false;
+  if (state.regionFilter !== 'all' && p.r !== state.regionFilter) return false;
+  const gated = chapNum(p.chap);
+  if (gated !== null && gated > state.runChap) return false;
+  if (!state.categories.includes(p.c)) return false;
+  if (state.search) {
+    const q = state.search.toLowerCase();
+    const fields = [p.n, p.alt, p.r, p.d, p.acc, p.req, CATEGORIES[p.c]?.label, p.stats];
+    if (!fields.some(f => f && String(f).toLowerCase().includes(q))) return false;
+  }
+  return true;
+}
+
+// ─── Render ───
+const chipStripEl = document.getElementById('chip-strip');
+const resultsEl = document.getElementById('results');
+const mainHLabel = document.getElementById('main-h-label');
+const mainHCount = document.getElementById('main-h-count');
+const progNum = document.getElementById('prog-num');
+const progBar = document.getElementById('prog-bar');
+const footerStats = document.getElementById('footer-stats');
+
+function renderChips() {
+  chipStripEl.innerHTML = '';
+  let cats;
+  if (state.mode === 'world') cats = WORLD_CATS;
+  else if (state.mode === 'items') cats = [...ITEM_CATS];
+  else cats = Object.keys(CATEGORIES);
+  cats.forEach(k => {
+    const c = CATEGORIES[k];
+    if (!c) return;
+    const count = POIS.filter(p => p.c === k).length;
+    const active = state.categories.includes(k);
+    const btn = document.createElement('button');
+    btn.className = 'chip' + (active ? ' active' : '');
+    btn.dataset.cat = k;
+    btn.innerHTML = `<span class="ico">${c.icon}</span>${escapeHtml(c.label)}<span class="count">${count}</span>`;
+    btn.addEventListener('click', () => {
+      const all = cats; // categorie visibili nel mode corrente
+      const arr = state.categories.filter(x => all.includes(x));
+      const allActive = arr.length === all.length;
+      if (allActive) {
+        // primo tap: isola questa categoria
+        state.categories = state.categories.filter(x => !all.includes(x)).concat([k]);
+      } else if (arr.includes(k)) {
+        // de-seleziona; se resta vuota, ripristina tutte
+        const next = arr.filter(x => x !== k);
+        state.categories = state.categories.filter(x => !all.includes(x)).concat(next.length === 0 ? all : next);
+      } else {
+        // aggiungi
+        state.categories = state.categories.filter(x => !all.includes(x)).concat([...arr, k]);
+      }
+      saveState();
+      renderChips();
+      renderResults();
+    });
+    chipStripEl.appendChild(btn);
+  });
+}
+
+function badgesHTML(p) {
+  const out = [];
+  out.push(`<span class="badge region">📍 ${escapeHtml(p.r)}</span>`);
+  if (p.lvl) out.push(`<span class="badge lvl">lv <span class="mono">${escapeHtml(p.lvl)}</span></span>`);
+  const gated = chapNum(p.chap);
+  if (gated !== null && gated >= 2) out.push(`<span class="badge chap">⛓ Cap.${gated}</span>`);
+  if (p.mandatory) out.push(`<span class="badge mandatory">storia</span>`);
+  if (isItem(p)) {
+    if (p.rarity) out.push(`<span class="badge rarity ${p.rarity}">${escapeHtml(p.rarity)}</span>`);
+    if (p.pg && Array.isArray(p.pg)) {
+      p.pg.forEach(c => {
+        if (c === 'any') return;
+        out.push(`<span class="badge pg">${escapeHtml(c[0])}</span>`);
+      });
+    }
+  }
+  return out.join('');
+}
+
+function shortDescHTML(p) {
+  // Item: usa composeItemSummary se ho i campi strutturati, altrimenti fallback su d
+  if (isItem(p) && (p.type || p.stats)) {
+    const summary = (typeof composeItemSummary === 'function') ? composeItemSummary(p) : '';
+    return escapeHtml(summary || p.d || '');
+  }
+  return escapeHtml(p.d || '');
+}
+
+function cardHTML(p) {
+  const cat = CATEGORIES[p.c] || {icon:'•', color:'#888'};
+  const completed = !!state.completed[p.id];
+  return `
+    <div class="swipe-wrap" data-id="${p.id}">
+      <div class="swipe-action"><span class="ico">✓</span><span>Fatto</span></div>
+      <div class="card cat-${p.c}${completed ? ' completed' : ''}" data-id="${p.id}">
+        <div class="head">
+          <div class="ico">${cat.icon}</div>
+          <div class="body">
+            <h3 class="title">${escapeHtml(p.n)}</h3>
+            <div class="badges">${badgesHTML(p)}</div>
+            <p class="desc">${shortDescHTML(p)}</p>
+          </div>
+        </div>
+      </div>
+    </div>`;
+}
+
+function groupByRegion(list) {
+  const map = new Map();
+  list.forEach(p => {
+    if (!map.has(p.r)) map.set(p.r, []);
+    map.get(p.r).push(p);
+  });
+  return [...map.entries()].sort((a,b) => REGIONS.indexOf(a[0]) - REGIONS.indexOf(b[0]));
+}
+
+function updateViewMode() {
+  const isOra   = state.mode === 'ora';
+  const isQuest = state.mode === 'quest';
+  const isSpecial = isOra || isQuest;
+  document.querySelector('.runstate').style.display         = isSpecial ? 'none' : '';
+  chipStripEl.style.display                                 = isSpecial ? 'none' : '';
+  document.querySelector('.filter-row').style.display       = isSpecial ? 'none' : '';
+  document.getElementById('results-section').style.display  = isSpecial ? 'none' : '';
+  document.getElementById('ora-section').style.display      = isOra   ? 'block' : 'none';
+  document.getElementById('quest-section').style.display    = isQuest ? 'block' : 'none';
+}
+
+function renderResults() {
+  updateViewMode();
+  if (state.mode === 'ora')   { renderOra();   return; }
+  if (state.mode === 'quest') { renderQuest(); return; }
+
+  // Lista principale
+  const visible = POIS.filter(poiMatches);
+  // Header label
+  let label;
+  if (state.mode === 'world') label = 'Mondo';
+  else if (state.mode === 'items') label = 'Compendio';
+  else label = 'Tutto';
+  if (state.regionFilter !== 'all') label += ' a ' + state.regionFilter;
+  mainHLabel.textContent = label;
+  mainHCount.textContent = visible.length ? `· ${visible.length}` : '';
+
+  if (!visible.length) {
+    resultsEl.innerHTML = `
+      <div class="empty">
+        <div class="ico">🌑</div>
+        <div class="ttl">Nessun risultato con i filtri attuali</div>
+        <div class="sub">Prova ad attivare "Mostra storia obbligatoria" o cambiare regione/capitolo.</div>
+      </div>`;
+  } else if (state.regionFilter === 'all') {
+    // Raggruppa per regione
+    const groups = groupByRegion(visible);
+    resultsEl.innerHTML = groups.map(([region, items]) => `
+      <div class="section-h"><span class="rune">◆</span>${escapeHtml(region)}<span class="count">· ${items.length}</span></div>
+      <div class="cards">${items.map(cardHTML).join('')}</div>
+    `).join('');
+  } else {
+    resultsEl.innerHTML = visible.map(cardHTML).join('');
+  }
+
+  // Wire interactions
+  wireCardEvents();
+
+  // Stats
+  renderStats(visible);
+}
+
+function renderStats(visibleNow) {
+  // POI in zona (regione corrente) non completati e non mandatory (i veri "to do")
+  const zoneTotal = POIS.filter(p => p.r === state.runRegion && !p.mandatory && !isItem(p) && (chapNum(p.chap) === null || chapNum(p.chap) <= state.runChap)).length;
+  const zoneDone = POIS.filter(p => p.r === state.runRegion && state.completed[p.id] && !p.mandatory && !isItem(p)).length;
+  progNum.textContent = `${zoneDone}/${zoneTotal}`;
+  const pct = zoneTotal ? (zoneDone / zoneTotal * 100) : 0;
+  progBar.style.width = pct + '%';
+  footerStats.textContent = `Pywel · ${POIS.length} POI`;
+}
+
+// ─── Sezione Ora ───
+function renderOra() {
+  const chap = state.runChap;
+  const zone = state.runRegion;
+
+  // Capitolo strip
+  const chapStrip = document.getElementById('ora-chap-strip');
+  chapStrip.innerHTML = CHAPTERS.map(n =>
+    `<button class="chap-btn${n === chap ? ' active' : ''}" data-chap="${n}">${n}</button>`
+  ).join('');
+  chapStrip.querySelectorAll('.chap-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      state.runChap = parseInt(btn.dataset.chap, 10);
+      document.getElementById('pill-chap-val').textContent = state.runChap;
+      saveState();
+      renderOra();
+    });
+  });
+
+  // Zone grid
+  const zoneGrid = document.getElementById('ora-zone-grid');
+  zoneGrid.innerHTML = REGIONS.map(r => {
+    const zm = ZONE_META[r] || { icon: '📍' };
+    const worldCount = POIS.filter(p =>
+      !isItem(p) && !p.mandatory && p.r === r &&
+      (chapNum(p.chap) === null || chapNum(p.chap) <= chap) &&
+      !state.completed[p.id]
+    ).length;
+    const itemCount = POIS.filter(p =>
+      isItem(p) && p.r === r &&
+      (chapNum(p.chap) === null || chapNum(p.chap) <= chap) &&
+      !state.completed[p.id]
+    ).length;
+    const total = worldCount + itemCount;
+    const active = r === zone;
+    return `<div class="zone-tile${active ? ' active' : ''}" data-zone="${escapeHtml(r)}">
+      <span class="z-ico">${zm.icon}</span>
+      <div class="z-body">
+        <div class="z-name">${escapeHtml(r)}</div>
+        <div class="z-count">${total} disponibili</div>
+      </div>
+    </div>`;
+  }).join('');
+  zoneGrid.querySelectorAll('.zone-tile').forEach(tile => {
+    tile.addEventListener('click', () => {
+      state.runRegion = tile.dataset.zone;
+      state.regionFilter = tile.dataset.zone;
+      document.getElementById('pill-region-val').textContent = tile.dataset.zone;
+      saveState();
+      renderOra();
+    });
+  });
+
+  // Risultati
+  const oraResults = document.getElementById('ora-results');
+  const worldItems = POIS.filter(p =>
+    !isItem(p) && !p.mandatory && p.r === zone &&
+    (chapNum(p.chap) === null || chapNum(p.chap) <= chap) &&
+    (!state.hideCompleted || !state.completed[p.id])
+  );
+  const compendioItems = POIS.filter(p =>
+    isItem(p) && p.r === zone &&
+    (chapNum(p.chap) === null || chapNum(p.chap) <= chap) &&
+    (!state.hideCompleted || !state.completed[p.id])
+  );
+
+  let html = '';
+  html += `<div class="ora-sub-h"><span class="rune">◆</span>Cosa fare<span class="cnt">· ${worldItems.length}</span></div>`;
+  if (worldItems.length === 0) {
+    html += `<div class="ora-empty">Nessun POI disponibile a ${escapeHtml(zone)} al Cap. ${chap}</div>`;
+  } else {
+    html += `<div class="cards">${worldItems.map(cardHTML).join('')}</div>`;
+  }
+  html += `<div class="ora-sub-h" style="margin-top:6px"><span class="rune">◆</span>Cosa raccogliere<span class="cnt">· ${compendioItems.length}</span></div>`;
+  if (compendioItems.length === 0) {
+    html += `<div class="ora-empty">Nessun item disponibile a ${escapeHtml(zone)} al Cap. ${chap}</div>`;
+  } else {
+    html += `<div class="cards">${compendioItems.map(cardHTML).join('')}</div>`;
+  }
+  oraResults.innerHTML = html;
+  wireOraCardEvents();
+  renderStats([...worldItems, ...compendioItems]);
+}
+
+// ─── Sezione Quest (accordion) ───
+function renderQuest() {
+  if (!state.questOpen) state.questOpen = {};
+  const section = document.getElementById('quest-section');
+  let html = '';
+
+  QUEST_GROUPS.forEach(grp => {
+    const allIds = grp.subs.flatMap(s => s.ids);
+    const grpPois = allIds.map(id => POIS.find(p => p.id === id)).filter(Boolean);
+    const total = grpPois.length;
+    const done  = grpPois.filter(p => state.completed[p.id]).length;
+    const allDone = total > 0 && done === total;
+    const isOpen = !!state.questOpen[grp.id];
+
+    html += `<div class="qa-group">
+      <div class="qa-group-header${isOpen ? ' open' : ''}" data-grp="${grp.id}">
+        <span class="qa-group-icon">${grp.icon}</span>
+        <span class="qa-group-name">${escapeHtml(grp.label)}</span>
+        <div class="qa-group-progress">
+          <span class="qa-counter${allDone ? ' alldone' : ''}">${done}/${total}</span>
+          <span class="qa-chevron">▾</span>
+        </div>
+      </div>
+      <div class="qa-group-body${isOpen ? ' open' : ''}">`;
+
+    grp.subs.forEach(sub => {
+      const subPois = sub.ids.map(id => POIS.find(p => p.id === id)).filter(Boolean);
+      if (subPois.length === 0) return;
+      const subDone = subPois.filter(p => state.completed[p.id]).length;
+      html += `<div class="qa-sub-header">
+        <span>${escapeHtml(sub.label)}</span>
+        <span class="qa-sub-counter">${subDone}/${subPois.length}</span>
+      </div>
+      <div class="cards">${subPois.map(cardHTML).join('')}</div>`;
+    });
+
+    html += `</div></div>`;
+  });
+
+  section.innerHTML = html;
+
+  // Accordion toggle
+  section.querySelectorAll('.qa-group-header').forEach(header => {
+    header.addEventListener('click', () => {
+      const id = header.dataset.grp;
+      state.questOpen[id] = !state.questOpen[id];
+      saveState();
+      renderQuest();
+    });
+  });
+
+  // Swipe / tap card events
+  section.querySelectorAll('.swipe-wrap').forEach(attachCardHandlers);
+}
+
+// ─── Card events: tap (sheet), swipe (complete) ───
+function wireCardEvents() {
+  resultsEl.querySelectorAll('.swipe-wrap').forEach(attachCardHandlers);
+}
+
+function wireOraCardEvents() {
+  document.getElementById('ora-results').querySelectorAll('.swipe-wrap').forEach(attachCardHandlers);
+}
+
+function attachCardHandlers(wrap) {
+  const id = wrap.dataset.id;
+  const card = wrap.querySelector('.card');
+  let startX = 0, startY = 0, currentX = 0, dragging = false, didSwipe = false, axisLocked = null;
+
+  card.addEventListener('click', (ev) => {
+    if (didSwipe) { didSwipe = false; return; }
+    openSheet(id);
+  });
+
+  card.addEventListener('touchstart', e => {
+    startX = e.touches[0].clientX;
+    startY = e.touches[0].clientY;
+    currentX = 0;
+    dragging = true;
+    axisLocked = null;
+    card.style.transition = 'none';
+  }, { passive: true });
+
+  card.addEventListener('touchmove', e => {
+    if (!dragging) return;
+    const dx = e.touches[0].clientX - startX;
+    const dy = e.touches[0].clientY - startY;
+    if (axisLocked === null) {
+      if (Math.abs(dx) > 6 || Math.abs(dy) > 6) {
+        axisLocked = (Math.abs(dx) > Math.abs(dy)) ? 'x' : 'y';
+      }
+    }
+    if (axisLocked !== 'x') return;
+    currentX = dx;
+    if (currentX < 0) {
+      const tx = Math.max(currentX, -120);
+      card.style.transform = `translateX(${tx}px)`;
+    }
+  }, { passive: true });
+
+  card.addEventListener('touchend', () => {
+    dragging = false;
+    card.style.transition = 'transform 0.25s';
+    if (currentX < -60) {
+      didSwipe = true;
+      card.style.transform = 'translateX(-110px)';
+      setTimeout(() => {
+        markCompleted(id);
+      }, 220);
+    } else {
+      card.style.transform = 'translateX(0)';
+    }
+    currentX = 0;
+  });
+
+  card.addEventListener('touchcancel', () => {
+    dragging = false;
+    card.style.transition = 'transform 0.25s';
+    card.style.transform = 'translateX(0)';
+  });
+}
+
+function markCompleted(id) {
+  state.completed[id] = true;
+  saveState();
+  renderResults();
+}
+function markUncompleted(id) {
+  delete state.completed[id];
+  saveState();
+  renderResults();
+}
+
+// ─── Bottom sheet ───
+const sheet = document.getElementById('sheet');
+const sheetBackdrop = document.getElementById('sheet-backdrop');
+const sheetContent = document.getElementById('sheet-content');
+const sheetHandle = document.getElementById('sheet-handle');
+
+function openSheet(id) {
+  const p = POIS.find(x => x.id === id);
+  if (!p) return;
+  const cat = CATEGORIES[p.c] || {icon:'•'};
+  const completed = !!state.completed[p.id];
+  sheetContent.innerHTML = `
+    <h2><span class="ico">${cat.icon}</span>${escapeHtml(p.n)}</h2>
+    ${p.alt ? `<div class="alt">alias: ${escapeHtml(p.alt)}</div>` : ''}
+    <div class="badges">${badgesHTML(p)}</div>
+    ${p.d ? `<p class="desc">${escapeHtml(p.d)}</p>` : ''}
+    ${isItem(p) && (p.type || p.stats || p.source) ? `
+      <div class="meta-block">
+        <h3>Dettagli oggetto</h3>
+        <p>${escapeHtml((typeof composeItemSummary === 'function') ? composeItemSummary(p) : '')}</p>
+      </div>
+    ` : ''}
+    ${p.req && p.req !== '—' ? `
+      <div class="meta-block">
+        <h3>Prerequisiti narrativi</h3>
+        <p>${escapeHtml(p.req)}</p>
+      </div>
+    ` : ''}
+    ${p.acc && p.acc !== '—' ? `
+      <div class="meta-block">
+        <h3>Come accedere</h3>
+        <p>${escapeHtml(p.acc)}</p>
+      </div>
+    ` : ''}
+    <div class="actions">
+      ${!p.noMap ? `<button class="btn primary" id="sheet-map">📍 Mostra sulla mappa</button>` : ''}
+      <button class="btn ${completed ? '' : 'success'}" id="sheet-toggle">${completed ? '↶ Annulla "fatto"' : '✓ Segna come fatto'}</button>
+    </div>
+  `;
+  sheet.classList.add('open');
+  sheetBackdrop.classList.add('open');
+  document.body.style.overflow = 'hidden';
+
+  const mapBtn = document.getElementById('sheet-map');
+  if (mapBtn) mapBtn.addEventListener('click', () => { closeSheet(); showOnMap(p); });
+  document.getElementById('sheet-toggle').addEventListener('click', () => {
+    if (state.completed[p.id]) markUncompleted(p.id); else markCompleted(p.id);
+    closeSheet();
+  });
+}
+function closeSheet() {
+  sheet.classList.remove('open');
+  sheetBackdrop.classList.remove('open');
+  document.body.style.overflow = '';
+}
+sheetBackdrop.addEventListener('click', closeSheet);
+
+// Swipe-down sulla maniglia per chiudere
+let sheetStartY = null, sheetCurY = null, sheetDragging = false;
+sheetHandle.addEventListener('touchstart', e => { sheetStartY = e.touches[0].clientY; sheetDragging = true; sheet.style.transition = 'none'; });
+sheetHandle.addEventListener('touchmove', e => {
+  if (!sheetDragging) return;
+  sheetCurY = e.touches[0].clientY - sheetStartY;
+  if (sheetCurY > 0) sheet.style.transform = `translateY(${sheetCurY}px)`;
+}, { passive: true });
+sheetHandle.addEventListener('touchend', () => {
+  sheetDragging = false;
+  sheet.style.transition = '';
+  sheet.style.transform = '';
+  if (sheetCurY > 80) closeSheet();
+  sheetCurY = null;
+});
+
+// ─── Pickers (regione + capitolo) ───
+const pickerBackdrop = document.getElementById('picker-backdrop');
+const pickerHeader = document.getElementById('picker-header');
+const pickerOpts = document.getElementById('picker-opts');
+let activePicker = null;
+
+function openPicker(kind) {
+  activePicker = kind;
+  if (kind === 'chapter') {
+    pickerHeader.textContent = 'Capitolo storia corrente';
+    pickerOpts.innerHTML = CHAPTERS.map(n =>
+      `<div class="row${n === state.runChap ? ' selected' : ''}" data-val="${n}">Cap. ${n}</div>`
+    ).join('');
+  } else if (kind === 'region') {
+    pickerHeader.textContent = 'Regione';
+    const opts = ['all', ...REGIONS];
+    pickerOpts.innerHTML = opts.map(r => `
+      <div class="row${(state.regionFilter === r) ? ' selected' : ''}" data-val="${escapeHtml(r)}">
+        ${r === 'all' ? 'Tutte le regioni' : escapeHtml(r)}
+      </div>
+    `).join('');
+  }
+  pickerBackdrop.classList.add('open');
+  pickerOpts.querySelectorAll('.row').forEach(row => {
+    row.addEventListener('click', () => {
+      const val = row.dataset.val;
+      if (activePicker === 'chapter') {
+        state.runChap = parseInt(val, 10);
+        document.getElementById('pill-chap-val').textContent = state.runChap;
+      } else {
+        state.regionFilter = val;
+        if (val !== 'all') state.runRegion = val;  // sincronizza
+        document.getElementById('pill-region-val').textContent = (val === 'all') ? 'Tutte' : val;
+      }
+      saveState();
+      closePicker();
+      renderResults();
+    });
+  });
+}
+function closePicker() {
+  pickerBackdrop.classList.remove('open');
+  activePicker = null;
+}
+pickerBackdrop.addEventListener('click', e => { if (e.target === pickerBackdrop) closePicker(); });
+
+document.getElementById('pill-chap').addEventListener('click', () => openPicker('chapter'));
+document.getElementById('pill-region').addEventListener('click', () => openPicker('region'));
+
+// ─── Segmented control ───
+document.querySelectorAll('.seg .opt').forEach(o => {
+  o.addEventListener('click', () => {
+    document.querySelectorAll('.seg .opt').forEach(s => s.classList.remove('active'));
+    o.classList.add('active');
+    state.mode = o.dataset.mode;
+    if (state.mode !== 'ora' && state.mode !== 'quest') {
+      if (state.mode === 'world') state.categories = [...WORLD_CATS, ...ITEM_CATS];
+      else if (state.mode === 'items') state.categories = [...WORLD_CATS, ...ITEM_CATS];
+      else state.categories = Object.keys(CATEGORIES);
+      renderChips();
+    }
+    saveState();
+    renderResults();
+  });
+});
+
+// ─── Toggle row ───
+document.querySelectorAll('.toggle').forEach(t => {
+  t.addEventListener('click', () => {
+    const key = t.dataset.toggle;
+    state[key] = !state[key];
+    t.classList.toggle('on', state[key]);
+    saveState();
+    renderResults();
+  });
+});
+
+// ─── Search ───
+const searchRow = document.getElementById('search-row');
+const searchInput = document.getElementById('search');
+document.getElementById('btn-search').addEventListener('click', () => {
+  searchRow.classList.toggle('open');
+  if (searchRow.classList.contains('open')) searchInput.focus();
+});
+document.getElementById('btn-search-close').addEventListener('click', () => {
+  searchRow.classList.remove('open');
+  searchInput.value = '';
+  state.search = '';
+  saveState();
+  renderResults();
+});
+searchInput.addEventListener('input', e => {
+  state.search = e.target.value;
+  saveState();
+  renderResults();
+});
+
+/// ─── Menu ⋯ ───
+const menuDropdown = document.getElementById('menu-dropdown');
+
+document.getElementById('btn-menu').addEventListener('click', (e) => {
+  e.stopPropagation();
+  menuDropdown.classList.toggle('open');
+});
+document.addEventListener('click', () => menuDropdown.classList.remove('open'));
+menuDropdown.addEventListener('click', e => e.stopPropagation());
+
+document.getElementById('menu-refresh').addEventListener('click', () => {
+  menuDropdown.classList.remove('open');
+  const prevCount = POIS.length;
+  loadData(true).then(() => {
+    const diff = POIS.length - prevCount;
+    showToast(diff > 0
+      ? `✅ Dati aggiornati — ${diff} nuovi POI!`
+      : '✅ Dati già aggiornati');
+  });
+});
+
+document.getElementById('menu-import').addEventListener('click', () => {
+  menuDropdown.classList.remove('open');
+  const txt = prompt('Incolla gli ID dei POI separati da virgola o a capo\n(es. matthias-hernand,howling-hill):');
+  if (!txt) return;
+  const ids = txt.split(/[\s,\n]+/).map(s => s.trim()).filter(Boolean);
+  let added = 0;
+  ids.forEach(id => {
+    if (POIS.find(p => p.id === id)) {
+      state.completed[id] = true;
+      added++;
+    }
+  });
+  saveState();
+  renderResults();
+  alert(`✓ Marcati ${added} POI come completati${ids.length !== added ? ` (${ids.length - added} ID non trovati)` : ''}.`);
+});
+
+document.getElementById('menu-reset').addEventListener('click', () => {
+  menuDropdown.classList.remove('open');
+  if (confirm('Cancello tutti i POI segnati come "fatto"?')) {
+    state.completed = {};
+    saveState();
+    renderResults();
+  }
+});
+
+// ─── Map modal (riusato) ───
+const REAL_MAP_REGIONS = {
+  "Pailune":         { tl: [0.15, 0.15], br: [0.50, 0.32] },
+  "Crimson Desert":  { tl: [0.42, 0.05], br: [0.85, 0.40] },
+  "Hernand":         { tl: [0.05, 0.35], br: [0.32, 0.72] },
+  "Demeniss":        { tl: [0.30, 0.45], br: [0.58, 0.68] },
+  "Delesyia":        { tl: [0.50, 0.58], br: [0.78, 0.82] },
+  "Abyss":           { tl: [0.20, 0.20], br: [0.80, 0.80] }
+};
+const FINE_CALIBRATION = {
+  "hernand-town":[0.18,0.62], "matthias-hernand":[0.18,0.62], "kailok-hornsplitter":[0.20,0.55],
+  "howling-hill":[0.22,0.58], "scholastone":[0.10,0.55], "tenebrum":[0.10,0.55],
+  "pailune-castle":[0.32,0.27], "ludvig-boss":[0.32,0.27], "myurdin-silverwolf":[0.30,0.20],
+  "draven-crowcaller":[0.40,0.55], "varnia":[0.78,0.07], "tommaso":[0.60,0.32],
+  "bell-varnia":[0.78,0.07], "bell-tommaso":[0.60,0.32], "bell-hernand":[0.18,0.62],
+  "bell-scholastone":[0.10,0.55], "bell-calphade":[0.12,0.48], "bell-demeniss":[0.42,0.55],
+  "bell-pailune":[0.30,0.25], "bell-delesyia":[0.62,0.72]
+};
+function realMapPos(p) {
+  if (FINE_CALIBRATION[p.id]) {
+    const [x,y] = FINE_CALIBRATION[p.id];
+    return { x: x*100, y: y*100 };
+  }
+  const reg = REAL_MAP_REGIONS[p.r];
+  if (!reg) return { x: 50, y: 50 };
+  let tx, ty;
+  if (p.absolute) {
+    const newBox = (typeof REGION_REMAP !== 'undefined') ? REGION_REMAP[p.r]?.to : null;
+    if (newBox) { tx = (p.x - newBox.x[0]) / (newBox.x[1] - newBox.x[0]); ty = (p.y - newBox.y[0]) / (newBox.y[1] - newBox.y[0]); }
+    else { tx = 0.5; ty = 0.5; }
+  } else {
+    const oldBox = (typeof REGION_REMAP !== 'undefined') ? REGION_REMAP[p.r]?.from : null;
+    if (oldBox) { tx = (p.x - oldBox.x[0]) / (oldBox.x[1] - oldBox.x[0]); ty = (p.y - oldBox.y[0]) / (oldBox.y[1] - oldBox.y[0]); }
+    else { tx = 0.5; ty = 0.5; }
+  }
+  tx = Math.max(0, Math.min(1, tx));
+  ty = Math.max(0, Math.min(1, ty));
+  return { x: (reg.tl[0] + tx*(reg.br[0]-reg.tl[0]))*100, y: (reg.tl[1] + ty*(reg.br[1]-reg.tl[1]))*100 };
+}
+const overlayEl = document.getElementById("map-overlay");
+const mapImg = document.getElementById("map-image");
+const mapPin = document.getElementById("map-pin");
+function showOnMap(p) {
+  if (p.noMap) { alert("Questo item non ha una location precisa sulla mappa."); return; }
+  const cat = CATEGORIES[p.c] || {icon:'•'};
+  const isAbyss = (p.r === "Abyss");
+  mapImg.src = isAbyss ? "Abyss.jpg" : "pywel.jpg";
+  const pos = realMapPos(p);
+  mapPin.style.left = pos.x + "%";
+  mapPin.style.top  = pos.y + "%";
+  document.getElementById("map-overlay-title").textContent = `${cat.icon} ${p.n}`;
+  document.getElementById("map-overlay-meta").textContent = `📍 ${p.r} · lv ${p.lvl||"—"} · ${p.chap||"—"}`;
+  document.getElementById("map-caption").innerHTML = `
+    <span class="ttl">${escapeHtml(p.n)}</span>${escapeHtml(p.d || "")}
+  `;
+  overlayEl.classList.add("open");
+  document.body.style.overflow = "hidden";
+}
+function closeMap() {
+  overlayEl.classList.remove("open");
+  document.body.style.overflow = "";
+}
+document.getElementById("map-close").addEventListener("click", closeMap);
+overlayEl.addEventListener("click", ev => { if (ev.target === overlayEl) closeMap(); });
+document.addEventListener("keydown", ev => {
+  if (ev.key === "Escape") {
+    if (overlayEl.classList.contains("open")) closeMap();
+    else if (sheet.classList.contains("open")) closeSheet();
+    else if (pickerBackdrop.classList.contains("open")) closePicker();
+  }
+});
+
+// ─── Init ───
+function init() {
+  document.getElementById('pill-chap-val').textContent = state.runChap;
+  document.getElementById('pill-region-val').textContent = (state.regionFilter === 'all') ? 'Tutte' : state.regionFilter;
+  document.querySelectorAll('.seg .opt').forEach(o => o.classList.toggle('active', o.dataset.mode === state.mode));
+  document.querySelectorAll('.toggle').forEach(t => t.classList.toggle('on', !!state[t.dataset.toggle]));
+  if (state.search) {
+    searchInput.value = state.search;
+    searchRow.classList.add('open');
+  }
+  if (state.mode !== 'ora' && state.mode !== 'quest') renderChips();
+  renderResults(); // chiama updateViewMode internamente
+}
+
+// ─── Toast notification ───
+function showToast(msg, duration = 3000) {
+  let t = document.getElementById('app-toast');
+  if (!t) {
+    t = document.createElement('div');
+    t.id = 'app-toast';
+    t.style.cssText = [
+      'position:fixed','bottom:calc(80px + env(safe-area-inset-bottom,0px))','left:50%',
+      'transform:translateX(-50%) translateY(20px)','opacity:0',
+      'background:var(--surface-2)','border:1px solid var(--gold-d)',
+      'color:var(--text)','padding:10px 18px','border-radius:12px',
+      'font-size:14px','z-index:9998','pointer-events:none',
+      'transition:opacity 0.25s,transform 0.25s','white-space:nowrap'
+    ].join(';');
+    document.body.appendChild(t);
+  }
+  t.textContent = msg;
+  requestAnimationFrame(() => {
+    t.style.opacity = '1';
+    t.style.transform = 'translateX(-50%) translateY(0)';
+  });
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => {
+    t.style.opacity = '0';
+    t.style.transform = 'translateX(-50%) translateY(20px)';
+  }, duration);
+}
+
+// ─── Fetch dati live ───
+const DATA_URL = './crimson_desert_data.json';
+
+async function loadData(silent = false) {
+  const screen = document.getElementById('loading-screen');
+  const spinner = document.getElementById('load-spinner');
+  const msg = document.getElementById('load-msg');
+  const errBox = document.getElementById('load-error');
+  if (!silent) {
+    screen.classList.remove('hidden');
+    spinner.style.display = 'block';
+    errBox.style.display = 'none';
+    msg.textContent = 'Caricamento dati…';
+  }
+  try {
+    const r = await fetch(DATA_URL + '?t=' + Date.now());
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const data = await r.json();
+    POIS = data.pois;
+    CATEGORIES = data.categories;
+  } catch(e) {
+    if (!silent) {
+      spinner.style.display = 'none';
+      msg.textContent = '';
+      errBox.style.display = 'flex';
+    } else {
+      showToast('⚠️ Errore aggiornamento dati');
+    }
+    console.error('Errore caricamento dati:', e);
+    return;
+  }
+  if (!silent) {
+    screen.classList.add('hidden');
+    init();
+  } else {
+    renderResults();
+  }
+}
+loadData();
+</script>
+</body>
+</html>

@@ -1,0 +1,26 @@
+{
+  "name": "Crimson Desert · Compagno di Gioco",
+  "short_name": "Crimson Desert",
+  "description": "Mappa interattiva e compendio di Crimson Desert (Pywel): POI, quest, boss, item.",
+  "start_url": "./crimson_desert_companion.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#f6efe3",
+  "theme_color": "#8b1a1a",
+  "lang": "it",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}
