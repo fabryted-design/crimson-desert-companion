@@ -1281,6 +1281,26 @@ const state = Object.assign({
   completed: {}
 }, loadState());
 
+// ─── Progressi Fabrizio (auto-import sincronico) ───
+(function(){
+  const IDS = [
+    'myurdin-tutorial','matthias-hernand','kailok-hornsplitter','howling-hill',
+    'tenebrum','draven-crowcaller','pailune-castle','ludvig-boss','myurdin-silverwolf',
+    'bell-hernand','bell-pailune','bell-calphade','bell-scholastone','bell-demeniss',
+    'hernand-town','hernand-requests','hernand-blacksmith','hernand-stable','hernand-fishing',
+    'pororin','silverwood','riverbend','oakbridge','old-mill','chestnut-grove',
+    'scholastone','scholastone-institute',
+    'alfonso-house-spears','alfonso-speartip','alfonso-transcendent',
+    'awakened-ludvig','hexe-marie',
+    'demeniss-capital','royal-palace','muckroot-ranch',
+    'silverwolf-mountain','reedwind-valley','frozen-soul-mountain',
+    'demeniss-quest-azerian','demeniss-quest-elemore'
+  ];
+  let added = 0;
+  IDS.forEach(id => { if (!state.completed[id]) { state.completed[id] = true; added++; } });
+  if (added > 0) saveState();
+})();
+
 // Validazioni state (in caso di vecchi dati malformati)
 if (!REGIONS.includes(state.runRegion)) state.runRegion = "Hernand";
 if (typeof state.runChap !== "number" || state.runChap < 1 || state.runChap > 12) state.runChap = 1;
@@ -2040,6 +2060,10 @@ async function loadData(silent = false) {
     const data = await r.json();
     POIS = data.pois;
     CATEGORIES = data.categories;
+    // Legge i completamenti baked nel JSON e li merge con lo stato locale
+    let jsonDoneAdded = 0;
+    POIS.forEach(p => { if (p.done && !state.completed[p.id]) { state.completed[p.id] = true; jsonDoneAdded++; } });
+    if (jsonDoneAdded > 0) saveState();
   } catch(e) {
     if (!silent) {
       spinner.style.display = 'none';
